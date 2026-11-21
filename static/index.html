@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数字资产中心</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- 窄屏温和提示（纯 CSS 控制，≤768px 显示；不锁死功能） -->
+<div id="narrow-hint" class="narrow-hint">📱 窗口较窄：本产品为电脑使用设计，建议在电脑浏览器放大窗口使用，部分内容可能显示不全。</div>
+
+<!-- ============ 首启两入口（FR-008，对照静态稿 sketches/spec002/01-first-run.html） ============ -->
+<div id="first-run" class="hidden">
+  <div class="first-run-card">
+    <div class="first-run-logo">🔐 Asset Vault</div>
+    <div class="first-run-sub">未检测到可用密码库，请选择开始方式</div>
+    <div class="first-run-entries" id="first-run-entries">
+      <button type="button" class="first-entry" id="first-run-create">
+        <span class="entry-ico">🆕</span>
+        <span class="entry-title">初始化新库</span>
+        <span class="entry-desc">设置 6 位数字主密码，创建全新的本机密码库。主密码遗失无法找回，请妥善记忆。</span>
+        <span class="entry-cta">创建新库</span>
+      </button>
+      <button type="button" class="first-entry secondary" id="first-run-restore">
+        <span class="entry-ico">📥</span>
+        <span class="entry-title">从备份恢复已有库</span>
+        <span class="entry-desc">选择 .avbak 备份文件并输入导出时的主密码。恢复为整体替换而非合并，凭证错误、文件被篡改或截断都会被拒绝，不会生成空库或半成品。</span>
+        <span class="entry-cta">选择备份文件</span>
+      </button>
+    </div>
+    <div class="first-run-note">两个入口对等展示、无默认选中；恢复入口在未解锁状态可用（一次性恢复凭证）。损坏库不进入本页，将显示停止写入与恢复说明。</div>
+  </div>
+</div>
+
+<!-- ============ 解锁页 ============ -->
+<div id="unlock">
+  <div class="unlock-card">
+    <div class="unlock-ico">🔐</div>
+    <h1>数字资产中心</h1>
+    <div class="sub" id="unlock-sub">输入主密码解锁（6 位数字）</div>
+    <div id="unlock-banner" class="hidden"></div>
+    <div class="err" id="unlock-err"></div>
+    <div class="pin-row" id="pin-row">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="unlock-btn">解锁</button>
+    <div class="unlock-hint"><a id="first-run-back" class="hidden">← 返回选择开始方式</a></div>
+    <div class="unlock-hint"><a id="restore-entry-link" class="hidden">从备份恢复已有库 →</a></div>
+    <div class="unlock-hint" id="unlock-note">只在本机使用：主密码不上传，请抄写保存</div>
+  </div>
+</div>
+
+<!-- ============ 主应用 ============ -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="logo">🔐 数字资产中心</div>
+    <div class="tabs">
+      <button class="tab active" data-view="assets">📋 资产</button>
+      <button class="tab" data-view="approval">🤖 AI 审批 <span class="badge" id="approval-badge">0</span></button>
+      <button class="tab" data-view="backup">🛡️ 备份与恢复</button>
+      <button class="tab" data-view="upgrade">⬆ 升级兼容</button>
+      <button class="tab" data-view="settings">⚙️ 设置</button>
+    </div>
+    <div class="topbar-actions">
+      <span class="session-state-note" id="session-state-note">已解锁 · 闲置 15 分钟锁定</span>
+      <button class="btn-add" id="add-asset-btn">＋ 新增资产</button>
+      <button class="btn-icon" id="lock-btn" title="锁定">🔒</button>
+    </div>
+  </div>
+  <div class="body">
+    <!-- 侧栏（仅资产视图显示） -->
+    <aside class="sidebar" id="sidebar">
+      <div id="nav"></div>
+      <div class="nav-item" id="manage-cat-btn" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;"><span class="ico">⚙️</span><span class="label">管理分类</span></div>
+    </aside>
+    <div class="content" id="content">
+      <!-- 资产视图 -->
+      <div id="view-assets">
+        <div class="page-head">
+          <div><h2>全部资产</h2><div class="sub">共 <span id="total">0</span> 项 · 加密存储于本机</div></div>
+          <div class="search-wrap"><span class="mag">🔍</span><input id="search" type="text" placeholder="搜索名称 / 账号 / 备注 / 端口…" autocomplete="off"></div>
+        </div>
+        <div id="save-backup-banner" class="hidden"></div>
+        <div id="list"></div>
+      </div>
+      <!-- AI 审批视图 -->
+      <div id="view-approval" class="hidden">
+        <div class="page-head"><div><h2>AI 审批</h2><div class="sub">AI 的每步操作都要你批准后才生效</div></div></div>
+        <div class="risk-banner">
+          <div class="w-ico">⚠️</div>
+          <div class="w-txt"><b>安全提示</b>：通过 AI 批量录入数字资产，密码 / 密钥可能被上传到云端 AI 服务器。请确认你信任该 AI 服务商，再批准写入。</div>
+        </div>
+        <div class="batch-bar"><button class="btn-approve-all" id="approve-all-btn">✓ 全部批准（0 项）</button></div>
+        <div id="req-list"></div>
+        <div class="history-section">
+          <button class="history-toggle" id="approval-history-toggle" type="button">
+            <span>已处理记录</span><span class="history-caret" id="approval-history-caret">▾</span>
+          </button>
+          <div class="history-desc">仅保留「何时批准/拒绝了什么操作」的非敏感记录，密码等提交内容处理后即不保留。</div>
+          <div id="approval-history-list" class="history-list hidden"></div>
+        </div>
+      </div>
+      <!-- 备份与恢复视图 -->
+      <div id="view-backup" class="hidden">
+        <div class="page-head">
+          <div><h2>备份与恢复</h2><div class="sub">保留每一次保存，也为换电脑和意外丢失留一条退路</div></div>
+          <button class="btn-add" id="backup-export-btn">⬇ 导出加密备份</button>
+        </div>
+        <div id="backup-status-bar"></div>
+        <div class="setting-card">
+          <h3>🛡️ 你的最近一次备份</h3>
+          <div class="desc" id="backup-latest-line">加载中…</div>
+          <div class="backup-verify-note warn-note hidden" id="backup-same-disk-note">
+            本机备份与密码库在同一台电脑。请把导出的加密文件另存到独立设备；同盘备份只防部分误操作，跨设备恢复尚未验收。
+          </div>
+          <div class="backup-latest-grid" id="backup-latest-grid"></div>
+          <div class="backup-actions" id="backup-actions"></div>
+        </div>
+        <div class="setting-card">
+          <h3>🗂️ 备份记录</h3>
+          <div class="desc">本机保留最近 30 份自动备份；每次保存产生一份并回读验证。标记「旧代次」的备份需用当时的主密码打开。</div>
+          <div id="backup-history-list" class="history-list"></div>
+        </div>
+        <div class="setting-card">
+          <h3>📥 从备份恢复</h3>
+          <div class="desc">带上备份文件，输入导出时的主密码。恢复会<b>整体替换</b>当前库，不会合并数据。</div>
+          <div class="backup-actions">
+            <button class="btn-primary" style="width:auto" id="restore-open-btn">从备份恢复 →</button>
+          </div>
+          <div class="warn-note restore-note">
+            恢复会替换当前库。已有库恢复前会先自动备份当前状态并回读验证，恢复失败时保留可用状态。
+          </div>
+        </div>
+        <div class="setting-card">
+          <h3>💻 在新电脑上恢复</h3>
+          <div class="desc">换电脑或电脑丢失时，只凭「加密备份文件 + 当时主密码」即可搬走整个库：</div>
+          <ol class="steps-list">
+            <li>在本页点「导出加密备份」，得到一个 <span class="mono">.avbak</span> 文件</li>
+            <li>把文件拷到 U 盘或新电脑（文件已加密，离开本机也无法被偷看）</li>
+            <li>在新电脑安装并打开本程序，解锁页点「从备份恢复已有库」</li>
+            <li>选择该文件，输入<b>导出这份备份时</b>的主密码</li>
+          </ol>
+          <div class="warn-note">跨设备完整恢复将在阶段 6 用 U 盘 / 第二台电脑实测验收；在此之前请继续保留现用电脑与本机库。</div>
+        </div>
+        <div class="setting-card">
+          <h3>📖 历史密码与旧备份说明</h3>
+          <div class="desc">
+            修改主密码不会改写历史备份：恢复时仍需要<b>导出该备份时</b>的主密码，不一定是当前密码。<br>
+            旧 <span class="mono">.bin</span> 备份还需要原库密钥材料，仅凭文件和主密码无法独立恢复；可在「<b>升级兼容</b>」页查看恢复条件并转换旧材料（旧 schema1 备份包同样在该页转换）。<br>
+            每次保存后自动生成并回读验证备份；查看、搜索和失败的操作不会产生新备份。
+          </div>
+        </div>
+      </div>
+      <!-- 升级兼容视图（对照原型截图 10） -->
+      <div id="view-upgrade" class="hidden">
+        <div class="page-head">
+          <div><h2>升级兼容</h2><div class="sub">先在副本上验证，保留你的资产、待审批和已有授权。</div></div>
+          <span class="warn-badge hidden" id="upgrade-readonly-badge" style="margin-left:auto;font-size:12px;padding:3px 12px;">旧库 · 只读</span>
+        </div>
+        <div class="upgrade-grid">
+          <!-- 左栏：副本升级 -->
+          <div class="setting-card">
+            <span class="warn-badge" id="upgrade-source-badge">旧库副本升级</span>
+            <h3 style="margin-top:14px">完整保留，再进行升级</h3>
+            <div class="desc">升级前后的资产标识、字段、分类、依赖保持一致。</div>
+            <div class="upgrade-checklist">
+              <div>✓ 升级前先创建并验证加密备份</div>
+              <div>✓ 保留待审批内容和旧 AI 令牌效力</div>
+              <div>✓ 已处理审批仅保留非敏感记录</div>
+              <div>✓ 失败停止写入，保留有效恢复材料</div>
+            </div>
+            <div class="info-note">升级只核验已配置的独立副本，不切换日常入口，不修改日常库。</div>
+            <button class="btn-primary wide-button" id="upgrade-open-btn">查看副本升级流程 →</button>
+          </div>
+          <!-- 右栏：旧备份与回退 -->
+          <div>
+            <h3 style="font-size:15px;font-weight:600;margin:4px 2px 10px;">旧备份与回退</h3>
+            <div class="setting-card">
+              <h3>旧 .bin 需要原库密钥材料</h3>
+              <div class="desc">只有旧备份和主密码时，无法独立恢复。材料仍在时，才能转换为新版加密包。</div>
+              <div class="backup-actions">
+                <button class="btn-ghost" id="legacy-info-btn">查看恢复条件</button>
+                <button class="btn-primary" style="width:auto" id="legacy-choose-btn">选择旧材料并转换</button>
+              </div>
+              <div id="legacy-file-name" class="field-hint"></div>
+              <div class="form-row hidden" id="legacy-pw-row" style="margin-top:10px;">
+                <label>该备份包导出时的备份密码</label>
+                <input type="password" id="legacy-backup-password" autocomplete="off" placeholder="schema1 备份包（.avbak）需要其包密码">
+              </div>
+              <div class="backup-actions">
+                <button class="btn-ghost hidden" id="legacy-convert-btn">转换为新版加密包 ↓</button>
+              </div>
+            </div>
+            <div class="setting-card">
+              <h3>回退前先保全最新数据</h3>
+              <div class="desc">回退不自动覆盖。先把当前最新状态封成保全包，再另行决定。</div>
+              <div class="backup-actions">
+                <button class="btn-ghost" id="rollback-open-btn">准备回退检查</button>
+              </div>
+            </div>
+            <div class="warn-note">未知或更高的数据格式拒绝写入，不自动清空或初始化。</div>
+          </div>
+        </div>
+      </div>
+      <!-- 设置视图 -->
+      <div id="view-settings" class="hidden">
+        <div class="page-head"><div><h2>设置</h2><div class="sub">主密码、AI 访问令牌、备份</div></div></div>
+        <div class="setting-card">
+          <h3>🔑 主密码</h3>
+          <div class="desc">打开整个保险库的唯一钥匙，丢失无法恢复</div>
+          <div class="setting-row">
+            <div class="label"><div class="t">当前主密码</div><div class="d">6 位数字，每次启动需输入</div></div>
+            <span class="token-box">••••••</span>
+            <button class="btn-ghost" id="master-change">修改</button>
+          </div>
+        </div>
+        <div class="setting-card">
+          <h3>🤖 AI 访问令牌</h3>
+          <div class="desc">给 AI Agent 用的独立钥匙，与主密码分开。AI 调工具必须带它，你可随时重新生成（作废旧令牌）</div>
+          <div class="setting-row">
+            <div class="label"><div class="t">访问令牌</div><div class="d">仅显示一次，请妥善保存</div></div>
+            <span class="token-box" id="ai-token" style="flex:1">—</span>
+            <button class="btn-ghost" id="token-copy">复制</button>
+            <button class="btn-ghost" id="token-reset" style="color:#c0392b">重新生成</button>
+          </div>
+        </div>
+        <!-- T056 US4：AI 总开关接线服务端（data/settings.json），对照静态稿 03 状态 A/C -->
+        <div class="setting-card">
+          <h3>🤖 AI 辅助设置</h3>
+          <div class="desc">设置只存放在本机 data/settings.json，不进加密库、不进备份包、不联网上报。主密码永远不会发送给 AI，只有提交的字段内容可能离开本机。</div>
+          <div class="setting-row">
+            <div class="label">
+              <div class="t">AI 功能总开关
+                <span class="bad-badge" id="ai-switch-badge">已关闭（默认）</span>
+              </div>
+              <div class="d" id="ai-switch-sub">关闭时 AI 请求一律拒绝（ai_disabled · 403），不写审批、不进队列、不触发备份</div>
+            </div>
+            <div class="switch" id="ai-switch"></div>
+          </div>
+          <div class="setting-row">
+            <div class="label">
+              <div class="t">开启前的上云风险提示
+                <span class="verify-badge" id="ai-risk-badge">提示生效中</span>
+              </div>
+              <div class="d">每次开启都先弹出风险确认，确认后开关才落盘</div>
+            </div>
+            <button class="link-btn hidden" id="ai-risk-restore">重新开启提示</button>
+          </div>
+        </div>
+        <div class="setting-card">
+          <h3>💾 备份与恢复</h3>
+          <div class="desc">每次保存后自动生成回读验证的加密备份；导出与恢复已移至「备份与恢复」页</div>
+          <div class="setting-row">
+            <div class="label"><div class="t">前往备份与恢复</div><div class="d">查看最近备份状态、导出加密包、从备份恢复</div></div>
+            <button class="btn-ghost" id="goto-backup">打开</button>
+          </div>
+        </div>
+        <!-- T031 危险操作：独立分区，与普通编辑/删除按钮隔离（FR-004） -->
+        <div class="setting-card danger-zone-card">
+          <h3>⚠️ 危险操作</h3>
+          <div class="desc">卸载与覆盖安装默认保留数据；本分区是卸载流程之外的独立危险操作</div>
+          <div class="setting-row">
+            <div class="label">
+              <div class="t danger-text">删除全部数据</div>
+              <div class="d">永久清空数据目录：加密密码库、全部备份包、本机设置与升级保全快照；<b>程序文件不删除</b>，删除后回到首启两入口，此操作无法撤销</div>
+            </div>
+            <button class="btn-danger-outline" id="wipe-open-btn">删除全部数据…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 新增/编辑资产模态框 ============ -->
+<div class="modal-mask hidden" id="asset-modal">
+  <div class="modal">
+    <div class="modal-head" id="modal-title">➕ 新增资产</div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>名称 *</label>
+        <input id="f-name" placeholder="如：阿里云、DeepSeek API、极空间 NAS" autocomplete="off">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>分类</label>
+          <select id="f-cat"></select>
+        </div>
+        <div class="form-row">
+          <label>状态</label>
+          <select id="f-status">
+            <option value="normal">🟢 正常</option>
+            <option value="expiring">🟡 临期</option>
+            <option value="expired">🔴 过期</option>
+            <option value="disabled">⚪ 未启用</option>
+          </select>
+        </div>
+      </div>
+      <!-- US5：FR-020 弹窗只新增这两个普通（非敏感）属性控件 -->
+      <div class="form-row">
+        <label>优先级</label>
+        <div class="seg" id="f-priority-seg">
+          <button type="button" class="seg-btn" data-priority="high">高</button>
+          <button type="button" class="seg-btn active" data-priority="normal">普通</button>
+          <button type="button" class="seg-btn" data-priority="low">低</button>
+        </div>
+        <!-- 分段控件的权威值；应用从不自动改写，只随手动保存落库 -->
+        <input type="hidden" id="f-priority" value="normal">
+      </div>
+      <div class="form-row">
+        <label>到期日（可选，纯日期；清空后保存即写 NULL）</label>
+        <div class="date-line">
+          <input type="date" id="f-due-date" autocomplete="off">
+          <button type="button" class="btn-ghost" id="f-due-clear">清空</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>字段（密码 / Key 类勾选 🔒 标记为敏感，将加密 + 掩码存储）</label>
+        <div id="field-editor"></div>
+        <div class="add-field-link" id="add-field-btn">＋ 添加字段</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="modal-cancel">取消</button>
+      <button class="btn-primary" style="width:auto" id="modal-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 分类管理模态框 ============ -->
+<div class="modal-mask hidden" id="cat-modal">
+  <div class="modal">
+    <div class="modal-head">⚙️ 管理分类</div>
+    <div class="modal-body">
+      <div class="desc" style="color:var(--muted);font-size:12.5px;margin-bottom:14px;">增删分类、改名称、上下调整顺序（「全部资产」固定不可改）</div>
+      <div id="cat-list"></div>
+      <div class="add-field-link" id="add-cat-btn">＋ 新增分类</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="cat-cancel">取消</button>
+      <button class="btn-primary" style="width:auto" id="cat-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="restore-file" accept=".avbak,application/octet-stream" class="hidden">
+
+<!-- ============ 恢复向导模态框 ============ -->
+<div class="modal-mask hidden" id="restore-modal">
+  <div class="modal">
+    <div class="modal-head">📥 从备份恢复密码库</div>
+    <div class="modal-body">
+      <div class="restore-steps" id="restore-steps"></div>
+
+      <!-- 步骤 1：选择备份 -->
+      <div id="restore-step1">
+        <div class="restore-drop" id="restore-drop">
+          <div class="restore-drop-ico">📄</div>
+          <div class="restore-drop-t" id="restore-file-name">选择一个加密备份文件（.avbak）</div>
+          <div class="restore-drop-d">原文件保持原样，本工具不会改动它</div>
+          <button class="btn-ghost" id="restore-choose-btn" style="margin-top:10px">选择备份文件</button>
+        </div>
+        <div class="form-row">
+          <label>备份导出时的主密码</label>
+          <input type="password" id="restore-backup-password" autocomplete="off" placeholder="导出该备份时使用的 6 位主密码">
+          <div class="field-hint">历史备份可能使用旧密码，不一定是当前密码。</div>
+        </div>
+        <div class="err" id="restore-err1"></div>
+      </div>
+
+      <!-- 步骤 2：已验证内容 -->
+      <div id="restore-step2" class="hidden">
+        <h3 class="restore-h3">✅ 备份内容已验证</h3>
+        <div class="desc" style="margin-bottom:12px">以下时间来自已验证的备份内容，恢复到这个时间点的状态。</div>
+        <div class="restore-meta" id="restore-meta"></div>
+        <div class="warn-note" id="restore-replace-note">恢复会替换当前库，不会合并。备份捕获时间之后的改动不会出现在恢复后的库中。</div>
+      </div>
+
+      <!-- 步骤 3：确认恢复 -->
+      <div id="restore-step3" class="hidden">
+        <h3 class="restore-h3">确认恢复到历史状态</h3>
+        <div class="restore-checklist">
+          <div>✅ 备份文件和密码验证通过</div>
+          <div id="restore-check-prebackup">✅ 当前库保护备份已验证</div>
+          <div>✅ 恢复失败时保留原有可用状态</div>
+        </div>
+        <div class="warn-note" id="restore-target-note"></div>
+        <label class="restore-confirm-row" id="restore-confirm-row">
+          <input type="checkbox" id="restore-confirm-box">
+          <span>我确认用这个时间点的备份<b>替换</b>当前库，不会合并数据。</span>
+        </label>
+        <div class="err" id="restore-err3"></div>
+      </div>
+
+      <!-- 结果 / 故障面板 -->
+      <div id="restore-result" class="hidden">
+        <div id="restore-result-body"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="restore-cancel">取消</button>
+      <button class="btn-primary" style="width:auto" id="restore-next">验证备份 →</button>
+      <button class="btn-danger" style="width:auto" id="restore-commit">确认替换并恢复</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="legacy-file" accept=".bin,.avbak,application/octet-stream" class="hidden">
+
+<!-- ============ 副本升级向导模态框（对照原型截图 10） ============ -->
+<div class="modal-mask hidden" id="upgrade-modal">
+  <div class="modal">
+    <div class="modal-head">⬆ 在旧库副本上验证升级</div>
+    <div class="modal-body">
+      <!-- 步骤 1：选择已配置副本 -->
+      <div id="upgrade-step1">
+        <div class="warn-note">升级前先做保护和核验：只操作安全配置中的独立副本，不操作日常库。</div>
+        <div class="form-row">
+          <label>升级副本</label>
+          <select id="upgrade-source-select"></select>
+          <div class="field-hint" id="upgrade-source-hint">副本由本程序的安全配置指定，界面不接受手填路径。</div>
+        </div>
+        <div class="form-row">
+          <label>该副本的主密码</label>
+          <input type="password" id="upgrade-source-password" autocomplete="off" placeholder="解锁这份旧库副本的主密码">
+          <div class="field-hint">只用于在只读连接上解锁副本核验，不会成为新密码，也不会发送给 AI。</div>
+        </div>
+        <div class="err" id="upgrade-err1"></div>
+      </div>
+
+      <!-- 步骤 2：核验结果与确认 -->
+      <div id="upgrade-step2" class="hidden">
+        <h3 class="restore-h3">✅ 副本内容已核验（只读预览，尚未改动）</h3>
+        <div class="restore-meta" id="upgrade-meta"></div>
+        <div class="upgrade-checklist" style="color:var(--text);margin:12px 0;">
+          <div>✓ 来源为独立副本，不是日常活动库</div>
+          <div>✓ 升级前加密备份已回读验证</div>
+          <div>✓ 资产、字段、关联与待审批匹配</div>
+          <div>✓ 旧 AI 令牌继续有效（不轮换、不扩权）</div>
+        </div>
+        <div class="warn-note" id="upgrade-warning"></div>
+        <label class="restore-confirm-row">
+          <input type="checkbox" id="upgrade-confirm-box">
+          <span>我确认仅升级这份副本，不切换日常使用入口。</span>
+        </label>
+        <div class="err" id="upgrade-err2"></div>
+      </div>
+
+      <!-- 结果 / 故障面板 -->
+      <div id="upgrade-result" class="hidden">
+        <div id="upgrade-result-body"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="upgrade-cancel">取消</button>
+      <button class="btn-primary" style="width:auto" id="upgrade-prepare-btn">核验副本 →</button>
+      <button class="btn-primary" style="width:auto" id="upgrade-commit-btn" disabled>确认仅升级这份副本</button>
+      <button class="btn-primary hidden" style="width:auto" id="upgrade-retry-btn">只补升级后的备份</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 旧备份恢复条件模态框 ============ -->
+<div class="modal-mask hidden" id="legacy-info-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head">旧备份的恢复条件</div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;line-height:1.7;">旧 <span class="mono">.bin</span> 需要匹配的原库密钥材料。材料可用时（在对应旧库的解锁会话中），先验证并转换为新版包；只剩文件和主密码时，不能承诺恢复。</p>
+      <p style="font-size:13.5px;line-height:1.7;margin-top:8px;">旧 schema1 备份包（<span class="mono">.avbak</span>）凭该包的备份密码即可在本页转换为新版包；转换只在内存进行，原文件保持不变。</p>
+      <div class="warn-note">不要删除仍可用的旧库及受保护恢复材料。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary" style="width:auto" id="legacy-info-close">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 回退检查模态框 ============ -->
+<div class="modal-mask hidden" id="rollback-modal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head">先保护最新状态，再准备回退</div>
+    <div class="modal-body">
+      <div id="rollback-intro">
+        <p style="font-size:13.5px;line-height:1.7;">这一步只把当前库的<b>最新状态</b>核验后封成一份保全包，不会用旧快照覆盖任何内容。</p>
+        <div class="warn-note">不直接用旧快照覆盖，不把新版库交给旧版程序同时打开。正式回退或切换日常入口需要另行明确授权。</div>
+        <div class="err" id="rollback-err"></div>
+      </div>
+      <div id="rollback-result" class="hidden"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="rollback-cancel">返回</button>
+      <button class="btn-primary" style="width:auto" id="rollback-run-btn">保全最新状态</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 删除全部数据二次确认模态框（T031，FR-004） ============ -->
+<div class="modal-mask hidden" id="wipe-modal">
+  <div class="modal wipe-modal" style="width:520px;">
+    <div class="modal-head danger-head">⚠ 确认删除全部数据？</div>
+    <div class="modal-body">
+      <div class="consequence-box">
+        此操作将永久删除本机数据目录中的：
+        <ul>
+          <li>加密密码库 vault.db（全部资产与审批记录）</li>
+          <li>backups/ 下所有 .avbak 备份包与 .origin.json sidecar</li>
+          <li>settings.json 本机设置（含 AI 开关与提示偏好）</li>
+          <li>rollback-snapshots/ 升级保全快照</li>
+        </ul>
+        程序文件、开始菜单快捷方式与卸载信息不受影响。删除后无法通过本程序恢复，仅能依靠您自行另存的备份文件。
+      </div>
+      <label class="confirm-line">
+        <input type="checkbox" id="wipe-ack">
+        <span>我了解数据将被永久删除且无法撤销</span>
+      </label>
+      <label class="confirm-line confirm-text-line">
+        <span>请输入 <b>DELETE</b> 以继续：</span>
+        <input type="text" id="wipe-text" class="confirm-typing" placeholder="DELETE" autocomplete="off">
+      </label>
+      <div class="err" id="wipe-err"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="wipe-cancel">取消</button>
+      <button class="btn-danger-solid" id="wipe-confirm" disabled>永久删除全部数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 修改主密码模态框（T048，US3，对照静态稿 02；点遮罩不关闭） ============ -->
+<div class="modal-mask hidden" id="pwd-change-modal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head">修改主密码</div>
+    <div class="modal-body">
+      <!-- 状态 A/B：正常填写与字段级校验错误 -->
+      <div id="pwd-change-form">
+        <div class="warn-banner" id="pwd-change-warn">
+          改密前会自动生成一份前置备份。<b>历史备份仍使用导出时的旧密码，不会被改写</b>；改密成功后当前会话立即失效，需要用新密码重新解锁。
+        </div>
+        <!-- 状态 C：前置备份阻断（默认隐藏，503 pre_backup_failed 时显现） -->
+        <div class="consequence-box hidden" id="pwd-change-block">
+          前置备份未能完成或未通过磁盘回读验证，改密已中止（pre_backup_failed · 503，可重试）。<br>
+          密码库未做任何改动，旧密码继续有效。请检查磁盘空间与备份目录权限后重试。
+        </div>
+        <div class="form-row">
+          <label>当前主密码</label>
+          <input class="pwd-input" id="pwd-current" type="password" inputmode="numeric"
+                 maxlength="6" autocomplete="off" placeholder="6 位数字">
+          <div class="err field-err" id="pwd-current-err"></div>
+        </div>
+        <div class="form-row">
+          <label>新主密码</label>
+          <input class="pwd-input" id="pwd-new" type="password" inputmode="numeric"
+                 maxlength="6" autocomplete="off" placeholder="6 位数字">
+          <div class="hint">仅限 6 位数字，不引入其他强度规则</div>
+          <div class="err field-err" id="pwd-new-err"></div>
+        </div>
+        <div class="form-row">
+          <label>确认新主密码</label>
+          <input class="pwd-input" id="pwd-confirm" type="password" inputmode="numeric"
+                 maxlength="6" autocomplete="off" placeholder="再次输入新密码">
+          <div class="err field-err" id="pwd-confirm-err"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" id="pwd-change-cancel">取消</button>
+      <button class="btn-primary" style="width:auto" id="pwd-change-submit" disabled>保存修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AI 开启风险确认模态框（T056，US4/FR-016，对照静态稿 03 状态 B；点遮罩不关闭） ============ -->
+<div class="modal-mask hidden" id="ai-risk-modal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head">开启 AI 辅助前请确认</div>
+    <div class="modal-body">
+      <div class="risk-box">
+        开启后，您主动提交给 AI 的<b>密码/密钥可能上传到云端 AI 服务器</b>，离开本机边界。<br>
+        主密码本身不会上传；AI 返回内容仍须经人工审批后才会写入密码库。
+      </div>
+      <label class="confirm-line">
+        <input type="checkbox" id="ai-risk-confirm">
+        <span>我已了解上述上云风险，确认开启 AI 功能</span>
+      </label>
+    </div>
+    <div class="modal-foot ai-risk-foot">
+      <label class="confirm-line">
+        <input type="checkbox" id="ai-risk-suppress">
+        <span>不再提示（可在设置中重新开启提示）</span>
+      </label>
+      <span class="ai-risk-actions">
+        <button class="btn-ghost" id="ai-risk-cancel">取消</button>
+        <button class="btn-primary" style="width:auto" id="ai-risk-confirm-btn" disabled>确认开启</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

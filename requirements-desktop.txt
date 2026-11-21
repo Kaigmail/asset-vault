@@ -1,0 +1,9 @@
+# 桌面外壳依赖（在 requirements.txt 基础上追加）
+# 桌面入口使用；浏览器开发入口不需要以下包。
+pywebview==6.2.1
+waitress==3.0.2
+pythonnet==3.2.1
+
+# 打包（开发者可选）：
+# pyinstaller==6.22.2
+# pyinstaller-hooks-contrib==2026.6

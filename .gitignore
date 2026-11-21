@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 程序数据（绝不入库）
+data/
+*.db
+*.db-lck
+*.lck
+*.avbak
+*.avkey
+*.avrp
+*.snap
+
+# 构建产物
+build/
+dist/
+*.spec.bak
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

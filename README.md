@@ -23,7 +23,7 @@
 
 ## 下载与使用（绿色免安装）
 
-1. 在 [Releases](../../releases) 下载 `AssetVault-green-v0.1.0.zip`，解压到任意文件夹
+1. 在 [Releases](../../releases) 下载 `AssetVault-green-v0.1.1.zip`，解压到任意文件夹
 2. 双击其中的 **`AssetVault.exe`**
    - 未签名程序可能出现 SmartScreen：点「更多信息」→「仍要运行」
 3. 首次启动二选一：
@@ -53,7 +53,7 @@ python -m desktop.app_main
 
 ## 版本
 
-当前公开版本：**v0.1.0（Pre-release）**，见 [Release Notes](RELEASE_NOTES.md)。
+当前公开版本：**v0.1.1（Pre-release）**，见 [Release Notes](RELEASE_NOTES.md)。
 
 ## 许可证
 

@@ -10,6 +10,7 @@
 body { font-family: -apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
 button { font-family: inherit; }
 .hidden { display: none !important; }
+.brand-mark { display: block; width: 1em; height: 1em; flex-shrink: 0; }
 
 /* ============ 解锁页 ============ */
 #unlock {
@@ -21,6 +22,7 @@ button { font-family: inherit; }
   padding: 40px 44px; width: 400px; text-align: center;
 }
 .unlock-ico { font-size: 40px; margin-bottom: 12px; }
+.unlock-ico .brand-mark { width: 52px; height: 52px; margin: 0 auto; }
 .unlock-card h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
 .unlock-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 26px; }
 .pin-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 22px; }
@@ -60,7 +62,8 @@ button { font-family: inherit; }
   background: var(--card); border-radius: 16px; box-shadow: var(--shadow-lg);
   padding: 40px 44px; width: 760px; max-width: 100%;
 }
-.first-run-logo { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+.first-run-logo { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.first-run-logo .brand-mark { width: 30px; height: 30px; }
 .first-run-sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 30px; }
 .first-run-entries { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .first-entry {
@@ -90,6 +93,7 @@ button { font-family: inherit; }
   padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 20px; flex-shrink: 0;
 }
 .logo { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.logo .brand-mark { width: 26px; height: 26px; }
 .tabs { display: flex; gap: 4px; flex: 1; }
 .tab {
   padding: 8px 14px; border-radius: 8px; cursor: pointer; color: #5b616b;

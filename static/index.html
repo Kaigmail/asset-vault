@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>数字资产中心</title>
+<link rel="icon" type="image/svg+xml" href="/static/asset-vault-icon.svg">
+<link rel="alternate icon" type="image/png" sizes="32x32" href="/static/asset-vault-icon-32.png">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -14,7 +16,7 @@
 <!-- ============ 首启两入口（FR-008，对照静态稿 sketches/spec002/01-first-run.html） ============ -->
 <div id="first-run" class="hidden">
   <div class="first-run-card">
-    <div class="first-run-logo">🔐 Asset Vault</div>
+    <div class="first-run-logo"><img class="brand-mark" src="/static/asset-vault-icon.svg" alt=""> Asset Vault</div>
     <div class="first-run-sub">未检测到可用密码库，请选择开始方式</div>
     <div class="first-run-entries" id="first-run-entries">
       <button type="button" class="first-entry" id="first-run-create">
@@ -37,7 +39,7 @@
 <!-- ============ 解锁页 ============ -->
 <div id="unlock">
   <div class="unlock-card">
-    <div class="unlock-ico">🔐</div>
+    <div class="unlock-ico"><img class="brand-mark" src="/static/asset-vault-icon.svg" alt=""></div>
     <h1>数字资产中心</h1>
     <div class="sub" id="unlock-sub">输入主密码解锁（6 位数字）</div>
     <div id="unlock-banner" class="hidden"></div>
@@ -60,7 +62,7 @@
 <!-- ============ 主应用 ============ -->
 <div id="app" class="hidden">
   <div class="topbar">
-    <div class="logo">🔐 数字资产中心</div>
+    <div class="logo"><img class="brand-mark" src="/static/asset-vault-icon.svg" alt=""> 数字资产中心</div>
     <div class="tabs">
       <button class="tab active" data-view="assets">📋 资产</button>
       <button class="tab" data-view="approval">🤖 AI 审批 <span class="badge" id="approval-badge">0</span></button>
